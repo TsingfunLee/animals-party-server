@@ -20,13 +20,13 @@ import { UpdateGameConsoleState, GameConsoleState } from './game-console.type';
 @WebSocketGateway()
 export class GameConsoleGateway {
   private logger: Logger = new Logger(GameConsoleGateway.name);
-  private roomService: RoomService = new RoomService();
 
   @WebSocketServer()
   private server!: Server<OnEvents, EmitEvents>;
 
   constructor(
     private readonly gameConsoleService: GameConsoleService,
+    private readonly roomService: RoomService,
     private readonly utilsService: UtilsService,
     private readonly wsClientService: WsClientService,
   ) {

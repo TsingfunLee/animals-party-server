@@ -7,7 +7,7 @@ import { RoomModule } from 'src/room/room.module';
 @Module({
   imports: [WsClientModule, RoomModule],
   providers: [GameConsoleGateway, GameConsoleService],
-  exports: [GameConsoleService],
+  exports: [GameConsoleService, GameConsoleGateway],
 })
 export class GameConsoleModule {
   //
