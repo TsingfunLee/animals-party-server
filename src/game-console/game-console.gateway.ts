@@ -16,6 +16,7 @@ import {
   SocketResponse,
 } from 'types/socket.type';
 import { UpdateGameConsoleState, GameConsoleState } from './game-console.type';
+import { GamepadData } from 'types/player.type';
 
 @WebSocketGateway()
 export class GameConsoleGateway {
@@ -90,6 +91,61 @@ export class GameConsoleGateway {
       status: 'suc',
       message: '取得 state 成功',
       data: state,
+    };
+    return result;
+  }
+
+  @SubscribeMessage<keyof OnEvents>('player:gamepad-data')
+  async handlePlayerGamepadData(socket: ClientSocket, data: GamepadData) {
+    const client = this.wsClientService.getClient({
+      socketId: socket.id,
+    });
+    if (!client) {
+      const result: SocketResponse = {
+        status: 'err',
+        message: '此 socket 不存在 client',
+      };
+      return result;
+    }
+
+    const room = this.roomService.getRoom({
+      playerId: client.id,
+    });
+    if (!room) {
+      const result: SocketResponse = {
+        status: 'err',
+        message: 'client 未加入任何房間',
+      };
+      return result;
+    }
+
+    const founderClient = this.wsClientService.getClient({
+      clientId: room.founderId,
+    });
+    if (!founderClient) {
+      const result: SocketResponse = {
+        status: 'err',
+        message: '此 socket 不存在 client',
+      };
+      return result;
+    }
+
+    const targetSocket = this.server.sockets.sockets.get(
+      founderClient.socketId,
+    );
+    if (!targetSocket) {
+      const result: SocketResponse = {
+        status: 'err',
+        message: '不存在 room founder 對應之 Client',
+      };
+      return result;
+    }
+
+    targetSocket.emit('player:gamepad-data', data);
+
+    const result: SocketResponse = {
+      status: 'suc',
+      message: '传输摇杆成功',
     };
     return result;
   }

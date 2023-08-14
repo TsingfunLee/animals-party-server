@@ -1,6 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ClientId } from 'src/ws-client/ws-client.service';
 import { customAlphabet } from 'nanoid';
+import { Server } from 'socket.io';
+import { OnEvents, EmitEvents } from 'types/socket.type';
+import { WsClientService } from 'src/ws-client/ws-client.service';
 
 /** 房間 ID，6 位數字組成 */
 export type RoomId = string;
@@ -19,6 +22,7 @@ const createRoomId = customAlphabet('1234567890', 6);
 export class RoomService {
   private logger: Logger = new Logger(RoomService.name);
   roomsMap = new Map<RoomId, Room>();
+  constructor(private readonly wsClientService: WsClientService) {}
   addRoom(clientId: string) {
     let roomId = createRoomId();
     while (this.roomsMap.has(roomId)) {
@@ -82,5 +86,31 @@ export class RoomService {
       room.playerIds.splice(index, 1);
       this.roomsMap.set(key, room);
     });
+  }
+  /** 發送指定房間之玩家數量*/
+  async emitPlayerUpdate(
+    founderId: string,
+    server: Server<OnEvents, EmitEvents>,
+  ) {
+    const room = this.getRoom({
+      founderId,
+    });
+    if (!room) return;
+
+    // 取得 game-console Client 資料
+    const founderClient = this.wsClientService.getClient({
+      clientId: founderId,
+    });
+    if (!founderClient) return;
+
+    const players = room.playerIds.map((playerId) => ({
+      clientId: playerId,
+    }));
+
+    // 對特定 socket 發送資料
+    const gameConsoleSocket = server.sockets.sockets.get(
+      founderClient.socketId,
+    );
+    gameConsoleSocket?.emit('game-console:player-update', players);
   }
 }
