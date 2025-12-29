@@ -66,7 +66,7 @@ export class GameConsoleService {
 
     const state: GameConsoleState = {
       ...data,
-      status: data?.status ?? 'home',
+      status: data?.status ?? 'playing',
       players,
     };
 
@@ -94,6 +94,7 @@ export class GameConsoleService {
 
     const sockets = await server.in(room.id).fetchSockets();
     sockets.forEach((socketItem) => {
+      this.logger.log(`状态 : ${state.status}`);
       socketItem.emit('game-console:state-update', state);
     });
   }
